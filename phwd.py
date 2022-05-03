@@ -48,7 +48,7 @@ class getweatherdata:
         for i in range(startyear, endyear):
             self.getdatafromyear(stationid, i)
 
-    def usrinput(self, pagesize=os.get_terminal_size().lines - 3):
+    def usrinput(self, pagesize=os.get_terminal_size().lines - 4):
         print(
             "Enter 1 to search for a specific place, press 2 if you have the station id"
         )
@@ -104,13 +104,13 @@ class getweatherdata:
                         print(
                             f"╔╗Found multiple results. Please select one of the following. Page {page} of {int(pagenumber)}"
                         )
-                    print(f"╚╝", flush=True)
-                    usrinpt = input()
-                    if usrinpt != "":
-                        usrinpt = int(usrinpt)
-                        return results[usrinpt - 1]["station"]
-                    elif usrinpt == "":
-                        self.usrinput()
+                print(f"╚╝Press Enter to go to start", flush=True)
+                usrinpt = input()
+                if usrinpt != "":
+                    usrinpt = int(usrinpt)
+                    return results[usrinpt - 1]["station"]
+                elif usrinpt == "":
+                    self.usrinput()
         elif choice == "2":
             print("Enter the station id:", flush=True, end="")
             stationid = input()
