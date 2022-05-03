@@ -5,6 +5,7 @@ import os
 import pandas as pd
 
 
+
 class getweatherdata:
     def __init__(self, folder):
         self.folder = folder
@@ -22,18 +23,20 @@ class getweatherdata:
     def getalldata(self, stationid):
         for i in range(2022, 1929, -1):
             url = self.formaturl(i, stationid)
-            print(url)
+            data = []
             r = requests.get(url)
             if r.status_code == 200:
                 failcounter = 0
                 with open(f"{self.folder}/{str(i)}-{stationid}.csv", "w") as f:
                     f.write(r.text)
+                data.append(self.csvToJson(f"{self.folder}/{str(i)}-{stationid}.csv"))
             else:
                 failcounter += 1
                 print(f"{i} failed")
             if failcounter > 5:
                 print("Failed 5 times, assuming no more data is available")
                 break
+        return data
 
     def getdatafromyear(self, stationid, year):
         url = self.formaturl(year, stationid)
@@ -41,13 +44,18 @@ class getweatherdata:
         if r.status_code == 200:
             with open(f"{self.folder}/{str(year)}-{stationid}.csv", "w") as f:
                 f.write(r.text)
-            self.csvToJson(f"{self.folder}/{str(year)}-{stationid}.csv")
+            return self.csvToJson(f"{self.folder}/{str(year)}-{stationid}.csv")
         else:
             print(f"{year} failed")
 
     def getdatafromrange(self, stationid, startyear, endyear):
+        data = []
         for i in range(startyear, endyear):
             self.getdatafromyear(stationid, i)
+            data.append(self.csvToJson(f"{self.folder}/{str(i)}-{stationid}.csv"))
+        return data
+
+        
 
     def usrinput(self, pagesize=os.get_terminal_size().lines - 4):
         print(
@@ -57,11 +65,10 @@ class getweatherdata:
         page = 1
         if choice == "1":
             results = []
-            print("Enter the name of the place")
-            print(
-                "Fun fact: If you want to search for a place in a state, you just put the abreviation then US"
-            )
+            print("Enter the name of the place you want to get the weather data for."                           )
+            print("Fun fact: If you want to search for a place in a state, you just put the abreviation then US")
             print("Like this: CA US")
+            print("If you live in a country besides the US, this will unfornuatly not work.")                                                                            
             place = input()
             searchterm = re.compile(place, re.IGNORECASE)
             with open("tags.json") as f:
@@ -123,7 +130,7 @@ class getweatherdata:
             else:
                 print("Invalid station id")
                 self.usrinput()
-    def csvToJson(self, file):
+    def csvToJson(self, file, remove = True):
         df = pd.read_csv(file)
         daydata = []
         for i in range(len(df)):
@@ -159,7 +166,8 @@ class getweatherdata:
             "elevation": float(df["ELEVATION"][0]),
             "data": daydata,
         }
-        with open(f"{self.folder}/{str(df['STATION'][0])}.json", "w") as f:
+        with open(f"{self.folder}/{str(df['DATE'][0]).split('-')[0]}-{str(df['STATION'][0])}.json", "w") as f:
             f.write(json.dumps(finaldata, indent=4))
-        # os.remove(file)
+        if remove: os.remove(file)
+        return finaldata
         
