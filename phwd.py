@@ -2,7 +2,7 @@ import json
 import requests
 import re
 import os
-
+import pandas as pd
 
 
 class getweatherdata:
@@ -41,6 +41,7 @@ class getweatherdata:
         if r.status_code == 200:
             with open(f"{self.folder}/{str(year)}-{stationid}.csv", "w") as f:
                 f.write(r.text)
+            self.csvToJson(f"{self.folder}/{str(year)}-{stationid}.csv")
         else:
             print(f"{year} failed")
 
@@ -122,3 +123,43 @@ class getweatherdata:
             else:
                 print("Invalid station id")
                 self.usrinput()
+    def csvToJson(self, file):
+        df = pd.read_csv(file)
+        daydata = []
+        for i in range(len(df)):
+            dayta = {
+                "date": str(df["DATE"][i]),
+                "temp": float(df["TEMP"][i]),
+                "max_temp": float(df["MAX"][i]),
+                "max_attrib": str(df["MAX_ATTRIBUTES"][i]),
+                "min_temp": float(df["MIN"][i]),
+                "min_attrib": str(df["MIN_ATTRIBUTES"][i]),
+                "temp_attribs": str(df["TEMP_ATTRIBUTES"][i]),
+                "dewpoint": float(df["DEWP"][i]),
+                "dewp_attribs": str(df["DEWP_ATTRIBUTES"][i]),
+                "sea_level_pressure": float(df["SLP"][i]),
+                "sea_level_pressure_attribs": str(df["SLP_ATTRIBUTES"][i]),
+                "station_pressure": float(df["STP"][i]),
+                "station_pressure_attribs": str(df["STP_ATTRIBUTES"][i]),                                                                                                                            # Braden was here
+                "visibility": float(df["VISIB"][i]),
+                "visibility_attribs": str(df["VISIB_ATTRIBUTES"][i]),
+                "wind_speed": float(df["WDSP"][i]),
+                "wind_speed_attribs": str(df["WDSP_ATTRIBUTES"][i]),
+                "max_sustained_wind": float(df["MXSPD"][i]),
+                "max_wind_speed": float(df["GUST"][i]),
+                "precipitation": float(df["PRCP"][i]),
+                "FRSHTT": str(df["FRSHTT"][i]),
+            }
+            daydata.append(dayta)
+            print(".", end="", flush=True)
+        finaldata = {
+            "station": int(df["STATION"][0]),
+            "longitude": float(df["LONGITUDE"][0]),
+            "latitude": float(df["LATITUDE"][0]),
+            "elevation": float(df["ELEVATION"][0]),
+            "data": daydata,
+        }
+        with open(f"{self.folder}/{str(df['STATION'][0])}.json", "w") as f:
+            f.write(json.dumps(finaldata, indent=4))
+        # os.remove(file)
+        

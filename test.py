@@ -1,5 +1,4 @@
 import phwd
 x = phwd.getweatherdata("dbg")
-dinput = x.usrinput()
-print(dinput)
-x.getdatafromyear(dinput,2021)
+y = x.usrinput()
+x.getdatafromyear(y,2011)
