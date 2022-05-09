@@ -5,7 +5,6 @@ import textbox
 import pandas as pd
 import requests
 import string
-
 class getweatherdata:
     def __init__(self, folder, eraseonexit = True):
         self.folder = folder
@@ -55,8 +54,7 @@ class getweatherdata:
         if not returnfilelist and not supresswarnings:
             print("Warning: returning the raw dictionary may be very slow, use with caution")
         for i in range(startyear, endyear):
-            self.getdatafromyear(stationid, i)
-            data.append(self.csvToJson(f"{self.folder}/{str(i)}-{stationid}.csv"))
+            data.append(self.getdatafromyear(stationid, i))
         return data
 
         
@@ -199,7 +197,6 @@ class getweatherdata:
                 "FRSHTT": str(self.frshttconv(df["FRSHTT"][i])),
             }
             daydata.append(self.dayta)
-            if not supresswarnings: print(".", end="", flush=True)
         for i in range(len(daydata)):
             if daydata[i]["max_wind_speed"] == 999.9:
                 daydata[i].pop("max_wind_speed")
@@ -216,5 +213,5 @@ class getweatherdata:
         if remove: os.remove(file)
         if returnfilelist: return path
         else: return finaldata
-        
+print("phwd initialized")
 

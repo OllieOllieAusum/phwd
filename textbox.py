@@ -20,6 +20,8 @@ class box:
         s.longestline = 0
         s.termsize = [os.get_terminal_size().columns, os.get_terminal_size().lines]
         s.margin = margin
+    def clear(s):
+        s.lines = []
 
     def addtext(s, text):
         if len(text) > s.longestline and len(text) <= s.termsize[0] - s.margin * 2:
