@@ -57,7 +57,7 @@ textbox.defaultdrawers = textbox.THINDRAWERS
 testbox = textbox.box(margin=5, full=True)
 testbox.addtext("This is a text box with thin block sides, because the default drawers have been changed")
 testbox.print()
-testbox = textbox.box()
+testbox.clear()
 testbox.addtext("This was initaly only for phwd, but I havent seen anyone else make something like this.")
 testbox.addtext("I might release it standalone without phwd, but I havent decided yet.")
 testbox.addtext("I am planning to also add more advanced features to it, but how I'm going to do that is unknown to me.")

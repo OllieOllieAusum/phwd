@@ -5,23 +5,29 @@ import textbox
 import pandas as pd
 import requests
 import string
-class getweatherdata:
-    def __init__(self, folder, eraseonexit = True):
+
+
+class getdailydata:
+    def __init__(self, folder, eraseonexit=True):
         self.folder = folder
         self.resurl = "https://www.ncei.noaa.gov/data/global-summary-of-the-day/access/"
 
     def formaturl(self, year, stationid):
-        return f"{self.resurl}{str(year)}/{str(stationid)}.csv" 
+        return f"{self.resurl}{str(year)}/{str(stationid)}.csv"
 
     def cscreen(self):
-        if os.name == "nt": 
+        if os.name == "nt":
             _ = os.system("cls")
         else:
             _ = os.system("clear")
 
-    def getalldata(self, stationid, returnfilelist = True, supressoutput = False, supresswarnings = False):
+    def getalldata(
+        self, stationid, returnfilelist=True, supressoutput=False, supresswarnings=False
+    ):
         if not returnfilelist and not supressoutput:
-            print("Warning: returning the raw dictionary may be very slow, use with caution")
+            print(
+                "Warning: returning the raw dictionary may be very slow, use with caution"
+            )
         data = []
         for i in range(2022, 1929, -1):
             url = self.formaturl(i, stationid)
@@ -30,34 +36,46 @@ class getweatherdata:
                 failcounter = 0
                 with open(f"{self.folder}/{str(i)}-{stationid}.csv", "w") as f:
                     f.write(r.text)
-                data.append(self.csvToJson(f"{self.folder}/{str(i)}-{stationid}.csv", supresswarnings = supresswarnings))
+                data.append(
+                    self.csvToJson(
+                        f"{self.folder}/{str(i)}-{stationid}.csv",
+                        supresswarnings=supresswarnings,
+                    )
+                )
             else:
                 failcounter += 1
-                if not supressoutput: print(f"{i} failed")
+                if not supressoutput:
+                    print(f"{i} failed")
             if failcounter > 5:
-                if not supressoutput: print("Failed 5 times, assuming no more data is available")
+                if not supressoutput:
+                    print("Failed 5 times, assuming no more data is available")
                 break
         return data
 
-    def getdatafromyear(self, stationid, year, returnfilelist = False):
+    def getdatafromyear(self, stationid, year, returnfilelist=False):
         url = self.formaturl(year, stationid)
         r = requests.get(url)
         if r.status_code == 200:
             with open(f"{self.folder}/{str(year)}-{stationid}.csv", "w") as f:
                 f.write(r.text)
-            return self.csvToJson(f"{self.folder}/{str(year)}-{stationid}.csv", returnfilelist=returnfilelist)
+            return self.csvToJson(
+                f"{self.folder}/{str(year)}-{stationid}.csv",
+                returnfilelist=returnfilelist,
+            )
         else:
             print(f"{year} failed")
 
-    def getdatafromrange(self, stationid, startyear, endyear, supresswarnings = False, returnfilelist = True):
+    def getdatafromrange(
+        self, stationid, startyear, endyear, supresswarnings=False, returnfilelist=True
+    ):
         data = []
         if not returnfilelist and not supresswarnings:
-            print("Warning: returning the raw dictionary may be very slow, use with caution")
+            print(
+                "Warning: returning the raw dictionary may be very slow, use with caution"
+            )
         for i in range(startyear, endyear):
             data.append(self.getdatafromyear(stationid, i))
         return data
-
-        
 
     def usrinput(self, pagesize=os.get_terminal_size().lines - 6):
         print(
@@ -69,10 +87,14 @@ class getweatherdata:
             results = []
             box = textbox.box()
             box.addtext("Enter the name of the place you want to get the weather from.")
-            box.addtext("Fun fact: If you want to search for a place in a state, you just put the abreviation then US")
+            box.addtext(
+                "Fun fact: If you want to search for a place in a state, you just put the abreviation then US"
+            )
             box.addtext("Like this: CA US")
-            box.addtext("If you live in a country besides the US, this will unfornuatly not work.")     
-            box.print()                                                                      
+            box.addtext(
+                "If you live in a country besides the US, this will unfornuatly not work."
+            )
+            box.print()
             place = input()
             searchterm = re.compile(place, re.IGNORECASE)
             with open("tags.json") as f:
@@ -139,6 +161,7 @@ class getweatherdata:
             else:
                 print("Invalid station id")
                 self.usrinput()
+
     def frshttconv(self, frshtt):
         x = list(str(int(frshtt)))
         flist = {}
@@ -165,10 +188,12 @@ class getweatherdata:
                 print(self.dayinfo)
             return flist
         except IndexError:
-            if not nofrshtt: return flist # if there are no frshtt codes
-            else: return None
+            if not nofrshtt:
+                return flist  # if there are no frshtt codes
+            else:
+                return None
 
-    def csvToJson(self, file, remove = True, supresswarnings = False, returnfilelist = True):
+    def csvToJson(self, file, remove=True, supresswarnings=False, returnfilelist=True):
         df = pd.read_csv(file)
         daydata = []
         for i in range(len(df)):
@@ -186,7 +211,9 @@ class getweatherdata:
                 "sea_level_pressure": float(df["SLP"][i]),
                 "sea_level_pressure_attribs": str(df["SLP_ATTRIBUTES"][i]),
                 "station_pressure": float(df["STP"][i]),
-                "station_pressure_attribs": str(df["STP_ATTRIBUTES"][i]),                                                                                                                            # Braden was here
+                "station_pressure_attribs": str(
+                    df["STP_ATTRIBUTES"][i]
+                ),  # Braden was here
                 "visibility": float(df["VISIB"][i]),
                 "visibility_attribs": str(df["VISIB_ATTRIBUTES"][i]),
                 "wind_speed": float(df["WDSP"][i]),
@@ -210,8 +237,33 @@ class getweatherdata:
         path = f"{self.folder}/{str(df['DATE'][0]).split('-')[0]}-{str(df['STATION'][0])}.json"
         with open(path, "w") as f:
             f.write(json.dumps(finaldata, indent=4))
-        if remove: os.remove(file)
-        if returnfilelist: return path
-        else: return finaldata
-print("phwd initialized")
+        if remove:
+            os.remove(file)
+        if returnfilelist:
+            return path
+        else:
+            return finaldata
 
+    def cleanup(self):
+        for file in os.listdir(self.folder):
+            if file.endswith(".json"):
+                os.remove(f"{self.folder}/{file}")
+
+
+class gethourlydata:  # has to be seperate class because of how the data is formatted between the two
+    def __init__(s, downloadfolder):
+        s.folder = downloadfolder
+        s.url = "https://www.ncei.noaa.gov/data/global-hourly/access/"
+
+    def formaturl(s, stationid, year):
+        return f"{s.url}{year}/{stationid}.csv"
+
+    def getdatafromyear(s, stationid, year):
+        url = s.formaturl(stationid, year)
+        print(url)
+        x = requests.get(url)
+        if x.status_code == 200:
+            with open(f"{s.folder}/{year}-{stationid}.csv", "w") as f:
+                f.write(x.text)
+        else:
+            print(f"{x.status_code}")
