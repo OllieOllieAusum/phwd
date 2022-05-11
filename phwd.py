@@ -97,11 +97,9 @@ class getdailydata:
             box.print()
             place = input()
             searchterm = re.compile(place, re.IGNORECASE)
-            with open("tags.json") as f:
+            with open("gsoytags.json") as f:
                 data = json.load(f)
-            for i in data:
-                if searchterm.search(i["location"]):
-                    results.append(i)
+            results = [match for match in data if searchterm.search(match)]
             print(len(results))
             if len(results) == 0:
                 print("No results found")
@@ -112,7 +110,7 @@ class getdailydata:
                 print("Does this look right? (y/n)")
                 choice = input()
                 if choice == "y":
-                    return i["id"]
+                    return i
                 elif choice == "n":
                     self.usrinput()
             else:
