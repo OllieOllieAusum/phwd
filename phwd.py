@@ -187,8 +187,8 @@ class getdailydata:
             return flist
         except IndexError:
             if not nofrshtt:
-                return flist  # if there are no frshtt codes
-            else:
+                return flist  # if there are no frshtt codes                                    # if there are no frshtt codes                          # if there are no frshtt codes                                                                                                      frshtt = 0                                                      k                   hello copilot, are you here?             are you here?      copilot?       
+            else:                                                                                     
                 return None
 
     def csvToJson(self, file, remove=True, supresswarnings=False, returnfilelist=True):

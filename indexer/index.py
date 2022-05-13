@@ -4,97 +4,82 @@ import os
 import time
 import json
 import datetime
-import multiprocessing as mp
 
 OUTPUTFILE = "gsoytags.json"
 INPUTFOLDERGSOY = "indexer/gsoy-latest"
 IMPUTFOLDERGSOD = "indexer/gsod-latest"
+BACKUPGSOD = "gsodbackup.py"
+BACKUPGSOY = "gsoybackup.py"
 """
     Global summary of the day uses a different station id standard than 
     Global summary of the year/month so both need to be indexed
     (This takes a lot of space so neither of the archives are included in git)
     the year for gsod is 2021
 """
-gsoylist = [x for x in os.listdir(INPUTFOLDERGSOY) if x.endswith(".csv")]
-gsodlist = [x for x in os.listdir(IMPUTFOLDERGSOD) if x.endswith(".csv")]
-totalfiles = len(gsoylist) + len(gsodlist)
-print("Total files:", totalfiles)
-masterdatalist = {}
-currentprogress = 0
-starttime = time.time()
-totaltime = 0
-def gsodindexer(IMPUTFOLDERGSOD):
-    currprogressgsod = 0
-    gsodlist = [x for x in os.listdir(IMPUTFOLDERGSOD) if x.endswith(".csv")]
-    totalgsod = len(gsodlist)
-    gsodtaglist = {}
-    for gsod in gsodlist:
-        df = pd.read_csv(os.path.join(IMPUTFOLDERGSOD, gsod))
-        print(currprogressgsod, "/", totalgsod)
-        currprogressgsod += 1
-        if (
-            len(df) < 20
-            or df["NAME"][0] == "nan"
-            or df["NAME"][0] == ""
-            or df["NAME"][0] == " "
-            or df["NAME"][0] == "NaN"
-        ):
-            continue
-        if df["NAME"][0] in masterdatalist:
-           gsodtaglist[str(df["NAME"][0])]["gsod"] = str(df["STATION"][0])
-        else:
-            gsodtaglist[df["NAME"][0]] = {"gsod": str(df["STATION"][0])}
-    queue.put(gsodtaglist)
-def gsoyindexer(INPUTFOLDERGSOY):
-    currprogressgsoy = 0
+if not os.path.exists(BACKUPGSOD) and not os.path.exists(BACKUPGSOY):  # if the backup files don't exist
     gsoylist = [x for x in os.listdir(INPUTFOLDERGSOY) if x.endswith(".csv")]
-    totalgsoy = len(gsoylist)
-    gsoytaglist = {}
+    gsodlist = [x for x in os.listdir(IMPUTFOLDERGSOD) if x.endswith(".csv")]
+    totalfiles = len(gsoylist) + len(gsodlist)
+    print("Total files:", totalfiles)
+    gsoydatalist = []
+    currentprogress = 0
+    starttime = time.time()
+    totaltime = 0
     for gsoy in gsoylist:
+        x = time.time()
+        currentprogress += 1
         df = pd.read_csv(os.path.join(INPUTFOLDERGSOY, gsoy))
-        print(currprogressgsoy, "/", totalgsoy)
-        currprogressgsoy += 1
         if (
             len(df) < 20
-            or df["NAME"][0] == "nan"
             or df["NAME"][0] == ""
-            or df["NAME"][0] == " "
-            or df["NAME"][0] == "NaN"
         ):
             continue
-        gsoytaglist[str(df["NAME"][0])] = {"gsoy": str(df["STATION"][0])}
-    queue.put(gsoytaglist)
-if __name__ == "__main__":
-    queue = mp.Queue()
-    processes = []
-    processes.append(mp.Process(target=gsodindexer, args=(IMPUTFOLDERGSOD,)))
-    processes.append(mp.Process(target=gsoyindexer, args=(INPUTFOLDERGSOY,)))
-    for p in processes:
-        p.start()
-
-    for p in processes:
-        p.join()
-    print("GSOD done, now converting to list")
-    finaldata = []
-    for key, value in masterdatalist:
-        finaldata.append([key,value])
-
-    try:
-        with open(OUTPUTFILE, "w") as f:
-            json.dump(masterdatalist, f)
-    except Exception as e:
-        print(f"Error: {e}, Exporting data as a python dictionary")
-        try:
-            with open("backup.py", "w") as f:
-                f.write(f"DATA = {masterdatalist}")
-        except Exception as e:
-            try:
-                print(f"Well im really grasping for straws but here is the error: {e}")
-                print("saving to a blank text file")
-                with open("backup.txt", "w") as f:
-                    f.write(masterdatalist)
-            except:
-                print("how did you get here?")
-                print("printing data as a fallback fallback fallback")
-                print(masterdatalist)
-    print("Done, took", time.time() - starttime, "seconds")
+        gsoydatalist.append({
+            "location": str(df["NAME"][0]),
+            "gsoy": str(df["STATION"][0])
+            })
+        totaltime += time.time() - x
+        print(
+            f"EST: {datetime.timedelta(seconds=math.floor((totaltime/currentprogress)*(totalfiles-currentprogress)))}| {currentprogress} out of {totalfiles}"
+        )
+    print("GSOY done, now GSOD")
+    gsoddatalist = []
+    for gsod in gsodlist:
+        x = time.time()
+        currentprogress += 1
+        df = pd.read_csv(os.path.join(IMPUTFOLDERGSOD, gsod))
+        if (
+            len(df) < 20
+            or df["NAME"][0] == ""
+        ):
+            continue
+        gsoddatalist.append({
+            "location": str(df["NAME"][0]),
+            "gsod": str(df["STATION"][0])
+            })
+        totaltime += time.time() - x
+        print(
+            f"EST: {datetime.timedelta(seconds=math.floor((totaltime/currentprogress)*(totalfiles-currentprogress)))}| {currentprogress} out of {totalfiles}"
+        )
+    print("GSOD done, now saving both files as backups")
+    with open(BACKUPGSOD, "w") as f:
+        f.write(f"GSODBACKUP = {tuple(gsoddatalist)}")
+    with open(BACKUPGSOY, "w") as f:
+        f.write(f"GSOYBACKUP = {tuple(gsoydatalist)}")
+    print("Backup done. now combining")
+else:
+    print("Backup found, loading")
+    import gsodbackup
+    import gsoybackup
+    gsoddatalist = gsodbackup.GSODBACKUP
+    gsoydatalist = gsoybackup.GSOYBACKUP
+masterdata = []
+namelist = []
+for gsoy in gsoydatalist:
+    masterdata.append(gsoy)
+    namelist.append(gsoy["location"])
+for gsod in gsoddatalist:
+    if gsod["location"] in namelist:
+        indexer = namelist.index(gsod["location"])
+        masterdata[indexer]["gsod"] = gsod["gsod"]
+print("Done, took", time.time() - starttime, "seconds")
